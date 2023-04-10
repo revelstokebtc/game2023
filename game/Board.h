@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include "Player.h"
 
 class Board
@@ -15,6 +16,7 @@ public:
 
 	// class methods
 	void draw();
+	std::string getBoard();
 
 	// pointer to player
 	Player* player;

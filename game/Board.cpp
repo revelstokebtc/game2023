@@ -15,6 +15,23 @@ Board::Board(int width, int height)
     initScreen();
 }
 
+std::string Board::getBoard() {
+    std::string boardText;
+    screen[this->player->getCoord().x][this->player->getCoord().y] = this->player->getSprite();
+    for (int y = 0; y < height; y++) {
+        for (int x = 0; x < width; x++) {
+            boardText += screen[x][y];
+        }
+        boardText += "\n";
+    }
+    for (int x = 0; x < width; x++) {
+        boardText += ground;
+    }
+    // reset player space
+    screen[this->player->getCoord().x][this->player->getCoord().y] = ' ';
+    return boardText;
+}
+
 void Board::draw()
 {
     // add player drawing
