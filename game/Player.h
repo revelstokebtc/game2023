@@ -4,15 +4,24 @@
 class Player
 {
 public:
-	Player();
-	Player(int x, int y, char sprite);
+	Player(int x, int y, char sprite) : vx(0), vy(0), x(x), y(y), sprite(sprite) {};
 	char getSprite();
 	Coord getCoord();
 	void setCoord(Coord);
 
+	// New Methods
+	void jump();
+	void addGravity();
+	void updatePosition();
+	bool onGround();
+
+	// Velocity
+	double vx, vy;
+
+	// Position
+	int x, y;
+
 private:
 	char sprite;
-	int x;
-	int y;
 };
 

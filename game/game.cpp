@@ -6,31 +6,22 @@
 #include <fstream>
 #include <iostream>
 #include <conio.h>
+#include <chrono>
+#include <thread>
+#include "windows.h"
 #include "Board.h"
 #include "Player.h"
+#include "Constants.h"
 
-// framerate
-// screen refresh (clear screen)
-// user controls
-
-char const QUIT_KEY = 'q';
-char const JUMP_KEY = ' ';
-char const RIGHT_KEY = 'd';
-char const LEFT_KEY = 'a';
-char const SAVE_KEY = 'e';
-char const LOAD_KEY = 'r';
-char const CHARACTER_KEY = '#';
-int const SCREEN_HEIGHT = 15;
-int const SCREEN_WIDTH = 40;
-int const CHARACTER_START_X = 0;
-int const CHARACTER_START_Y = SCREEN_HEIGHT-1;
+enum PlayerAction { NONE, JUMP, MOVE_RIGHT, MOVE_LEFT, SAVE, LOAD };
 
 char input() {
-    return _getch();
-}
-
-void logic() {
-
+    if (_kbhit()) {
+        return _getch();
+    }
+    else {
+        return 0;
+    }
 }
 
 std::string getSaveFilePath() {
@@ -105,47 +96,106 @@ bool save(Board b, Player p) {
 
 int main()
 {
+    HANDLE consoleHandle = GetStdHandle(STD_OUTPUT_HANDLE);
+    CONSOLE_CURSOR_INFO info;
+    info.dwSize = 100;
+    info.bVisible = FALSE;
+    SetConsoleCursorInfo(consoleHandle, &info);
+
     Board board(SCREEN_WIDTH, SCREEN_HEIGHT);
     Player player(CHARACTER_START_X, CHARACTER_START_Y, CHARACTER_KEY);
-    // @todo: change coordinate system to velocity
-    Coord playerCoord;
 
     board.player = &player;
 
     std::cout << "Welcome to our game!\n";
     char userInput;
+    PlayerAction action = NONE;
+
+    std::chrono::milliseconds frameDuration(FRAME_DURATION);
+
     do
     {
+        auto frameStart = std::chrono::high_resolution_clock::now();
+
         // input ////////////////////////////////////////
         userInput = input();
+        if (userInput != 0) {
+            switch (userInput) {
+            case JUMP_KEY:
+                action = JUMP;
+                break;
+            case RIGHT_KEY:
+                action = MOVE_RIGHT;
+                break;
+            case LEFT_KEY:
+                action = MOVE_LEFT;
+                break;
+            case SAVE_KEY:
+                action = SAVE;
+                break;
+            case LOAD_KEY:
+                action = LOAD;
+                break;
+            default:
+                action = NONE;
+                break;
+            }
+        }
+        else {
+            action = NONE;
+        }
 
         // logic ////////////////////////////////////////
-        playerCoord = player.getCoord();
-        if (userInput == JUMP_KEY) {
+        switch (action) {
+        case JUMP:
             // @todo: only if on ground
-            playerCoord.y--;
-        }
-        else if (userInput == RIGHT_KEY) {
+            player.jump();
+            break;
+        case MOVE_RIGHT:
             // @todo: check right boundary
-            playerCoord.x++;
-        }
-        else if (userInput == LEFT_KEY) {
+            player.vx = 1;
+            break;
+        case MOVE_LEFT:
             // @todo: check left boundary
-            playerCoord.x--;
-        }
-        else if (userInput == SAVE_KEY) {
+            player.vx = -1;
+            break;
+        case SAVE:
             save(board, player);
-        }
-        else if (userInput == LOAD_KEY) {
+            break;
+        case LOAD:
             load();
+            break;
+        case NONE:
+        default:
+            break;
         }
-        player.setCoord(playerCoord);
-        logic();
+
+        // Gravity and movement
+        player.addGravity();
+        player.updatePosition();
+
+        // reset horizontal velocity
+        player.vx = 0;
 
         // draw ////////////////////////////////////////
         board.draw();
 
-    } while (!_kbhit() && userInput != QUIT_KEY);
+        auto frameEnd = std::chrono::high_resolution_clock::now();
+
+        // Calculate how long this frame took
+        auto frameTime = std::chrono::duration_cast<std::chrono::milliseconds>(frameEnd - frameStart);
+
+        // If the frame finished quicker than frameDuration, sleep for the remaining time
+        if (frameTime < frameDuration)
+        {
+            std::this_thread::sleep_for(frameDuration - frameTime);
+        }
+
+        if (userInput == QUIT_KEY)
+        {
+            break;
+        }
+    } while (true);
     std::cout << "\nGame Over!\n";
     system("pause");
 }

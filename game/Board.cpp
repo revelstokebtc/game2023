@@ -46,6 +46,9 @@ void Board::draw()
     for (int x = 0; x < width; x++) {
         std::cout << ground;
     }
+    std::cout << "\np(" << this->player->x << ", " << this->player->y << ")";
+    std::cout << "\nv(" << this->player->vx << ", " << this->player->vy << ")";
+
     // reset player space
     screen[this->player->getCoord().x][this->player->getCoord().y] = ' ';
 }
